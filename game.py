@@ -1,8 +1,11 @@
 from __future__ import annotations
+import os
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from fastapi import WebSocket
 
+BASE_STORAGE_DIR = "chepukha_storage"
 
 # ──────────────────────────── models ────────────────────────────
 @dataclass
@@ -174,6 +177,8 @@ class GameManager:
                     and room.players
                     and len(room.players) >= 2
                     and room.players[0].id == pid):
+                room.storage_path = os.path.join(BASE_STORAGE_DIR, room_id, datetime.now().strftime("%Y%m%d%H%M%S"))
+                os.makedirs(room.storage_path, exist_ok=True)
                 room.started = True
                 room.finised = False
                 room.sheets = [[] for _ in room.players]
@@ -218,6 +223,12 @@ class GameManager:
             # раздаём состояние обоим
             await self.deliver_state(room, next_p)
             await self.deliver_state(room, player)
+
+        for i, sheet in enumerate(room.sheets):
+            path = os.path.join(room.storage_path, f"sheet{i+1}.txt")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(line.hidden + "\n" + line.visible for line in sheet))
+
 
 # экземпляр менеджера
 manager = GameManager()

@@ -17,7 +17,7 @@ document.write(cur==="dark"
 :root{--main:#333;--accent:#0d6efd;--border:#ddd;--bg:#fff}
 *{box-sizing:border-box} body{
   margin:0;padding:24px 32px;font-family:system-ui,sans-serif;
-  background:var(--bg);color:var(--main);display:flex;gap:32px;max-width:900px}
+  background:var(--bg);color:var(--main);display:flex;gap:32px}
 .hidden{display:none}
 /* — sidebar — */
 #sidebar{min-width:180px}
@@ -30,7 +30,7 @@ button:disabled{opacity:.4}
 #main{flex:1}
 .card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
 textarea{width:100%;min-height:70px;padding:10px;border-radius:6px;
-  border:1px solid var(--border);resize:vertical;font-size:1rem}
+  border:1px solid var(--border);resize:none;font-size:1rem}
 #visible-header{display:flex;justify-content:space-between;font-size:.85em;
   color:var(--accent);margin-bottom:6px}
 #row{display:flex;gap:12px}
@@ -55,7 +55,7 @@ pre{white-space:pre-wrap;border:1px solid var(--border);padding:10px;border-radi
       <div class="visible-text" style="white-space:pre-wrap;font-size:1.1rem"></div>
   </div>
 
-<form id="form" class="card hidden">
+<form id="form" class="card hidden" style="border:none;">
   <div id="row">
     <!-- текстовые поля -->
     <div id="col-txt">
@@ -70,7 +70,7 @@ pre{white-space:pre-wrap;border:1px solid var(--border);padding:10px;border-radi
       <button id="send-btn" type="submit" disabled>Передать следующему</button>
 
       <div id="preview" class="card" style="margin-top:12px;padding:12px 8px;
-           font-size:.9rem;white-space:pre-wrap;min-height:120px">
+           font-size:1.3rem;white-space:pre-wrap;min-height:120px">
         <i>Представление появится здесь…</i>
       </div>
     </div>
@@ -80,7 +80,7 @@ pre{white-space:pre-wrap;border:1px solid var(--border);padding:10px;border-radi
   <div id="wait"  class="card hidden">Ожидаем листик…</div>
 
   <div id="final" class="card hidden">
-      <h3>Получилась какая-то чепуха:</h3><ul id="final-list"></ul>
+      <h3>Получилась какая-то чепуха:</h3><div id="final-list"></div>
       <button id="copy-result">Скопировать</button>
   </div>
 </div>

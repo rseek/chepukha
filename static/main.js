@@ -34,12 +34,8 @@ const waitBlk     = document.getElementById("wait");
 const finalBlk    = document.getElementById("final");
 const finalList   = document.getElementById("final-list");
 const fromSpan    = document.getElementById("visible-from");
-
 const sendBtn = document.getElementById("send-btn");
-
 let hiddenDraft = "";
-
-/* ---------- валидация & превью ---------- */
 const preview = document.getElementById("preview");
 let lastVisible = "";        // приходит от сервера
 
@@ -64,13 +60,13 @@ function updatePreview() {
 
 function animateSend() {
   const hidden = document.getElementById("hidden")
-  const visible = document.getElementById("visible")
+  // const visible = document.getElementById("visible")
   hidden.classList.add("fade-out")
-  visible.classList.add("fade-flash")
+  // visible.classList.add("fade-flash")
   setTimeout(() => {
     hidden.classList.remove("fade-out")
-    visible.classList.remove("fade-flash")
-  }, 800)
+    // visible.classList.remove("fade-flash")
+  }, 1800)
 }
 
 hiddenField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
@@ -131,8 +127,10 @@ ws.onmessage = (e) => {
     waitBlk.classList.add("hidden");
     visibleBlk.classList.add("hidden");
     finalBlk.classList.remove("hidden");
-    finalList.innerHTML = data.sheets
-      .map(s => `<li><pre>${s}</pre></li>`).join("");
+    if (data.sheets) {
+      finalList.innerHTML = data.sheets
+      .map(s => `<pre>${s}</pre>`).join("");
+    }
     startBtn.disabled = false;
   }
 };
@@ -145,7 +143,7 @@ startBtn.onclick = () => {
 };
 
 form.onsubmit = (e) => {
-  animateSend()
+  // animateSend()
   e.preventDefault();
   const hidden = hiddenField.value.trim();
   const visible = visibleField.value.trim();
