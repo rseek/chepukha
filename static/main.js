@@ -14,6 +14,9 @@ const visibleBlock = document.getElementById("visible-block");
 const waitBlock = document.getElementById("wait");
 const finalBlock = document.getElementById("final");
 const finalList = document.getElementById("final-list");
+const wrapBtn      = document.getElementById("wrap-btn");
+const secondStep   = document.getElementById("second-step");
+let   hiddenDraft  = "";              // временно храним «скрытую» часть
 
 localStorage.setItem("player_id", playerId);
 
@@ -64,6 +67,8 @@ ws.onmessage = (event) => {
     }
 
     if ((data.visible !== undefined) && gameStarted) {
+        document.getElementById("visible-from").innerText =
+          data.from ? `Чепуха от ${data.from}` : "Начните писать чепуху!";
         visibleBlock.classList.remove("hidden");
         waitBlock.classList.add("hidden");
         finalBlock.classList.add("hidden");
@@ -88,12 +93,28 @@ startBtn.onclick = () => {
     startBtn.disabled = true;
 };
 
+wrapBtn.onclick = () => {
+  hiddenDraft = hiddenField.value.trim();
+  if (!hiddenDraft) return alert("Введите скрытый текст!");
+
+  // hiddenField.disabled = true;
+  // wrapBtn.disabled     = true;
+
+  secondStep.classList.remove("hidden");          // показываем 2‑й этап
+  visibleField.focus();
+};
+
 form.onsubmit = (e) => {
-    e.preventDefault();
-    const hidden = hiddenField.value.trim();
-    const visible = visibleField.value.trim();
-    if (!hidden && !visible) return;
-    ws.send(JSON.stringify({ hidden, visible }));
-    hiddenField.value = "";
-    visibleField.value = "";
+  e.preventDefault();
+  const visible = visibleField.value.trim();
+  if (!hiddenDraft || !visible) return;
+
+  ws.send(JSON.stringify({ hidden: hiddenDraft, visible }));
+
+  // сбросить UI в исходное состояние
+  hiddenDraft = "";
+  hiddenField.value = visibleField.value = "";
+  hiddenField.disabled = false;
+  wrapBtn.disabled     = false;
+  secondStep.classList.add("hidden");
 };

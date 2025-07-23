@@ -61,20 +61,20 @@ pre{white-space:pre-wrap;background:#0f1622;
       <div class="visible-text" style="white-space:pre-wrap;font-size:1.1rem"></div>
   </div>
 
-  <div id="wait" class="card hidden"></div>
+  <div id="wait" class="card hidden">Ожидаем листик...</div>
 
   <form id="form" class="hidden card" style="background:#111723">
-      <textarea id="hidden" placeholder="Скрытая часть"></textarea><br>
+      <textarea id="hidden" placeholder="Будет завёрнуто - следующий не увидит текст из этого поля"></textarea><br>
       <button id="wrap-btn" type="button">Завернуть</button>
 
       <div id="second-step" class="hidden" style="margin-top:10px">
-          <textarea id="visible" placeholder="Видимая часть"></textarea><br>
-          <button type="submit">Передать</button>
+          <textarea id="visible" placeholder="Видимая часть - следующий увидит текст из этого поля"></textarea><br>
+          <button type="submit">Передать следующему</button>
       </div>
   </form>
 
   <div id="final" class="hidden card">
-      <h2 style="margin-top:0">Результат</h2>
+      <h2 style="margin-top:0">Получилась какая-то чепуха:</h2>
       <ul id="final-list"></ul>
   </div>
 

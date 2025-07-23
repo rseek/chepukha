@@ -9,6 +9,7 @@ from fastapi import WebSocket
 class Step:
     hidden: str
     visible: str
+    author: str
 
     def to_text(self) -> str:
         return f"{self.hidden}\n{self.visible}"
@@ -108,16 +109,24 @@ class GameManager:
 
         # если лист ещё не создан (может быть на ранней стадии игры)
         if sheet_idx >= len(room.sheets):
-            await player.ws.send_json({"visible": "(первая строка)"})
+            await player.ws.send_json({"visible": "", "from": None})
             return
 
         sheet = room.sheets[sheet_idx]
         if sheet:
             visible = sheet[-1].visible
-            await player.ws.send_json({"visible": visible})
+            await player.ws.send_json({"visible": visible, "from": sheet[-1].author})
         else:
             # лист пустой — первая строка
-            await player.ws.send_json({"visible": "(первая строка)"})
+            await player.ws.send_json({"visible": "", "from": None})
+        try:
+            last = room.sheets[sheet_idx][-1]
+            await player.ws.send_json({
+                "visible": last.visible,
+                "from":    last.author
+            })
+        except IndexError as ie:
+            await player.ws.send_json({"visible": "", "from": None})
 
     # ── game flow ────────────────────────────────────────────────
     async def handle_input(self, room_id: str, pid: str, data: dict):
@@ -163,7 +172,7 @@ class GameManager:
 
         hidden, visible = data.get("hidden", ""), data.get("visible", "")
         sheet_idx = player.inbox.pop(0)           # берём свой лист
-        room.sheets[sheet_idx].append(Step(hidden, visible))
+        room.sheets[sheet_idx].append(Step(hidden, visible, author=player.name))
         # если этот лист — «домашний» и он полный → игрок закончил
         if (sheet_idx == player.home_sheet
                 and len(room.sheets[sheet_idx]) - 1 == room.rounds_total * len(room.players)):
