@@ -17,6 +17,17 @@ const finalList = document.getElementById("final-list");
 
 localStorage.setItem("player_id", playerId);
 
+// --- имя игрока ---
+let playerName = localStorage.getItem("player_name");
+if (!playerName) {
+    playerName = prompt("Введите ваше имя")?.trim() || "Игрок";
+    localStorage.setItem("player_name", playerName);
+}
+
+ws.addEventListener("open", () => {
+    ws.send(JSON.stringify({ action: "introduce", name: playerName }));
+});
+
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.start) {
@@ -37,13 +48,15 @@ ws.onmessage = (event) => {
             gameStarted = data.started;
             localStorage.setItem("game_started", gameStarted ? "true" : "false");
         }
-        const players = data.players;
-        playerList.innerHTML = "<b>Игроки:</b> " + players.map(p => p === playerId ? `<u>${p}</u>` : p).join(", ");
+        const plids = data.plids;
+        const names = data.players;
 
-        // Показываем кнопку "Начать", если:
-        // - текущий игрок — первый (creator)
-        // - и игроков двое или больше
-        if (!gameStarted && !data.finished && players[0] === playerId && players.length >= 2) {
+        playerList.innerHTML =
+            "<b>Игроки:</b><ul>" +
+            names.map(n => `<li>${n === playerName ? "<u>"+n+"</u>" : n}</li>`).join("") +
+            "</ul>";
+
+        if (!gameStarted && !data.finished && plids[0] === playerId && plids.length >= 2) {
             startBtn.classList.remove("hidden");
         } else {
             startBtn.classList.add("hidden");

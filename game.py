@@ -18,6 +18,7 @@ class Step:
 class Player:
     id: str
     ws: WebSocket
+    name: str = "Игрок"
     inbox: list[int] = field(default_factory=list)   # индексы листиков, которые лежат «у меня»
     current_round: int = 0
     home_sheet: int = -1          # индекс «родного» листа
@@ -59,7 +60,7 @@ class GameManager:
             player.ws = ws
             print(f"[RECONNECT] {player_id} -> {room_id}")
         else:                                      # new player
-            player = Player(player_id, ws)
+            player = Player(player_id, ws=ws)
             room.players.append(player)
             print(f"[CONNECT]   {player_id} -> {room_id}")
 
@@ -84,12 +85,10 @@ class GameManager:
     # ── helpers ──────────────────────────────────────────────────
     async def broadcast_players(self, room: Room):
         ids = [p.id for p in room.players]
+        names = [p.name for p in room.players]
         for p in room.players:
-            if p.finished:
-                print("player finished")
-            else:
-                print("player NOT finished")
-                await p.ws.send_json({"players": ids, "started": room.started, "finished": room.finished})
+            if not p.finished:
+                await p.ws.send_json({"plids": ids, "players": names, "started": room.started, "finished": room.finished})
 
     async def deliver_state(self, room: Room, player: Player):
         """
@@ -124,6 +123,14 @@ class GameManager:
     async def handle_input(self, room_id: str, pid: str, data: dict):
         room = self.rooms.get(room_id)
         if not room:
+            return
+
+        # игрок прислал своё имя
+        if data.get("action") == "introduce":
+            player = room.get_player_by_id(pid)
+            if player and isinstance(data.get("name"), str):
+                player.name = data["name"][:40]            # ограничим длину
+                await self.broadcast_players(room)
             return
 
         # ─ start ─
