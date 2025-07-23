@@ -65,6 +65,13 @@ class GameManager:
 
         await self.broadcast_players(room)
 
+        # вернуть результат, если уже finished
+        if player.finished:
+            idx = player.home_sheet
+            sheet_txt = "\n".join(step.to_text() for step in room.sheets[idx])
+            await ws.send_json({"players": [p.id for p in room.players], "finished": True, "sheets": [sheet_txt]})
+            return
+
         # вернуть состояние, если игра уже идёт
         if room.started:
             await self.deliver_state(room, player)
