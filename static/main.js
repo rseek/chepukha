@@ -14,9 +14,27 @@ const visibleBlock = document.getElementById("visible-block");
 const waitBlock = document.getElementById("wait");
 const finalBlock = document.getElementById("final");
 const finalList = document.getElementById("final-list");
+let gameStarted = localStorage.getItem("game_started") === "true";
 
+localStorage.setItem("game_started", "false");
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    console.log(localStorage.getItem("game_started"))
+
+    if (data.start) {
+        console.log("ALAL data.start")
+        gameStarted = true;
+        localStorage.setItem("game_started", "true");
+    }
+
+    if (data.wait && gameStarted) {
+        visibleBlock.classList.add("hidden");
+        waitBlock.classList.remove("hidden");
+        finalBlock.classList.add("hidden");
+        form.classList.add("hidden");
+    } else {
+        waitBlock.classList.add("hidden");
+    }
 
     if (data.players) {
         const players = data.players;
@@ -40,14 +58,8 @@ ws.onmessage = (event) => {
         visibleBlock.querySelector(".visible-text").innerText = data.visible;
     }
 
-    if (data.wait) {
-        visibleBlock.classList.add("hidden");
-        waitBlock.classList.remove("hidden");
-        finalBlock.classList.add("hidden");
-        form.classList.add("hidden");
-    }
-
     if (data.finished) {
+        localStorage.setItem("game_started", "false");
         visibleBlock.classList.add("hidden");
         waitBlock.classList.add("hidden");
         form.classList.add("hidden");
@@ -58,6 +70,7 @@ ws.onmessage = (event) => {
 
 startBtn.onclick = () => {
     ws.send(JSON.stringify({ action: "start" }));
+    localStorage.setItem("game_started", "true");
     startBtn.disabled = true;
 };
 

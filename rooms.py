@@ -18,5 +18,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_id: str)
             await manager.handle_input(room_id, player_id, data)
     except Exception as e:
         print(f"[WS ERROR] {e}")
+        print(locals())
     finally:
         await manager.disconnect(room_id, player_id)

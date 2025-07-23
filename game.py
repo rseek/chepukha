@@ -24,6 +24,7 @@ class Room:
     id: str
     players: List[Player] = field(default_factory=list)
     started: bool = False
+    rounds_total = 3
 
     def get_player_by_id(self, pid: str) -> Optional[Player]:
         return next((p for p in self.players if p.id == pid), None)
@@ -32,8 +33,8 @@ class Room:
         return self.players[(current_index + 1) % len(self.players)]
 
     def all_finished(self) -> bool:
-        total_rounds = len(self.players) * 3
-        return all(p.current_round >= 3 for p in self.players)
+        # total_rounds = len(self.players) * 3
+        return all(p.current_round >= self.rounds_total for p in self.players)
 
 class GameManager:
     def __init__(self):
@@ -42,24 +43,27 @@ class GameManager:
     async def connect(self, room_id: str, player_id: str, websocket: WebSocket):
         await websocket.accept()
         room = self.rooms.setdefault(room_id, Room(id=room_id))
-        player = room.get_player_by_id(player_id)
-        if not player:
+
+        existing_player = room.get_player_by_id(player_id)
+        if existing_player:
+            try:
+                await existing_player.ws.close()
+            except Exception:
+                pass
+            existing_player.ws = websocket
+            print(f"[RECONNECT] {player_id} переподключился к комнате {room_id}")
+            await websocket.accept()
+            await self.deliver_next(existing_player)
+            await self.broadcast_players(room_id)
+            return    
+        else:
             player = Player(id=player_id, ws=websocket)
             room.players.append(player)
-        player.ws = websocket
 
         print(f"[CONNECT] {player_id} подключился к комнате {room_id}")
         await self.broadcast_players(room_id)
+        await self.deliver_next(room.get_player_by_id(player_id))  # обновляем ему состояние
 
-        # Повторная инициализация состояния
-        if room.all_finished():
-            sheets = ["\n".join(step.to_text() for step in p.sheet) for p in room.players]
-            await player.ws.send_json({"finished": True, "sheets": sheets})
-        elif room.started:
-            if player.queue:
-                await self.deliver_next(player)
-            else:
-                await player.ws.send_json({"wait": True})
 
 
     async def disconnect(self, room_id: str, player_id: str):
@@ -79,6 +83,7 @@ class GameManager:
                 for p in room.players:
                     p.queue = ["(первая строка)"]
                 print(f"[GAME START] Комната {room_id} — игра началась")
+                await p.ws.send_json({"start": True})
                 await self.dispatch_turns(room)
             return
 
@@ -124,5 +129,14 @@ class GameManager:
         ids = [p.id for p in room.players]
         for p in room.players:
             await p.ws.send_json({"players": ids})
+
+    async def deliver_next(self, player: Player):
+        if not player:
+            return
+        if player.queue:
+            await player.ws.send_json({"visible": player.queue[0]})
+        else:
+            await player.ws.send_json({"wait": True})
+
 
 manager = GameManager()
