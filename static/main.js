@@ -129,7 +129,7 @@ ws.onmessage = (e) => {
     finalBlk.classList.remove("hidden");
     if (data.sheets) {
       finalList.innerHTML = data.sheets
-      .map(s => `<pre>${s}</pre>`).join("");
+      .map(s => `${s}`).join("");
     }
     startBtn.disabled = false;
   }

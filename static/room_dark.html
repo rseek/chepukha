@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Marck+Script&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/static/main.css">
 <meta charset="UTF-8">
 <title>Чепуха — Dark</title>
@@ -17,7 +20,7 @@ document.write(cur==="dark"
 :root{--bg:#131720;--card:#1e2736;--border:#2e3a4f;--main:#e4e9f3;--accent:#6f7dff}
 *{box-sizing:border-box}
 body{
-  margin:0;padding:24px 32px;font-family:Inter,-apple-system,BlinkMacSystemFont;
+  margin:0;padding:24px 32px;
   background:var(--bg);color:var(--main);display:flex;gap:32px}
 .hidden{display:none}
 /* sidebar */
@@ -71,11 +74,11 @@ pre{white-space:pre-wrap;background:#0f1622;border:1px solid var(--border);
     </div>
 
     <!-- кнопка + превью -->
-    <div id="col-btn" style="min-width:190px">
+    <div id="col-btn">
       <button id="send-btn" type="submit" disabled>Передать следующему</button>
 
-      <div id="preview" class="card" style="margin-top:12px;padding:12px 8px;
-           font-size:1.3rem;background:#131720;white-space:pre-wrap;min-height:120px">
+      <div id="preview" class="card" style="margin-top:12px;padding:20px 20px;
+           font-size:1.0rem;background:#131720;white-space:pre-wrap;min-height:120px">
         <i>Представление появится здесь…</i>
       </div>
     </div>
