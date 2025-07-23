@@ -43,7 +43,7 @@ ws.onmessage = (event) => {
         // Показываем кнопку "Начать", если:
         // - текущий игрок — первый (creator)
         // - и игроков двое или больше
-        if ((players[0] === playerId) && (players.length >= 2) && (gameStarted === false) && (data.finished === false)) {
+        if (!gameStarted && !data.finished && players[0] === playerId && players.length >= 2) {
             startBtn.classList.remove("hidden");
         } else {
             startBtn.classList.add("hidden");
