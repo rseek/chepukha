@@ -1,41 +1,80 @@
+<!-- templates/room.html  (вариант A) -->
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Чепуха</title>
-    <style>
-        .hidden { display: none; }
-        textarea { width: 100%; height: 60px; }
-        #players ul { margin:0; padding-left:1em; }
-        #players li { list-style-type: "👤 "; }        
-    </style>
+<meta charset="UTF-8">
+<title>Чепуха — Light</title>
+
+<!-- 1) считываем тему из query‑строки -->
+<script>
+const urlParams = new URLSearchParams(location.search);
+const curTheme  = urlParams.get("theme") || "light";
+const otherLink = curTheme === "dark"
+  ? `<a id="theme-link" href="?theme=light" style="float:right">☀️ Light</a>`
+  : `<a id="theme-link" href="?theme=dark"  style="float:right">🌙 Dark</a>`;
+document.write(otherLink);        // вставляем прямо в DOM
+</script>
+
+<style>
+:root {
+  --main: #333;
+  --accent: #0d6efd;
+  --border: #ddd;
+  --bg: #fff;
+}
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0 auto; max-width: 640px; padding: 24px;
+  color: var(--main); background: var(--bg);
+}
+h2 { margin-top: 1.2em }
+.hidden { display:none }
+button{
+  padding:8px 16px;border:1px solid var(--accent);
+  background:var(--accent);color:#fff;border-radius:4px;
+  cursor:pointer;font-size:1rem
+}
+button:disabled{opacity:.4;cursor:default}
+textarea{
+  width:100%;min-height:60px;padding:8px;
+  border:1px solid var(--border);border-radius:4px;
+  resize:vertical;font-size:1rem
+}
+#players ul{margin:.5em 0;padding-left:1.2em}
+#players li{list-style:"👤 ";margin:.25em 0}
+#visible-block{border:1px solid var(--border);padding:12px;border-radius:6px;margin:12px 0;background:#fafafa}
+#wait{color:var(--accent);font-style:italic;margin:12px 0}
+pre{white-space:pre-wrap;border:1px solid var(--border);padding:8px;border-radius:4px;background:#f8f9fa}
+</style>
 </head>
 <body>
-    <div id="players"></div>
-    <button id="start" class="hidden">Начать</button>
+  <h1>Игра «Чепуха»</h1>
 
-    <div id="visible-block" class="hidden">
-        <div>Видимая часть:</div>
-        <div class="visible-text" style="white-space: pre-wrap;"></div>
-    </div>
+  <div id="players"></div>
+  <button id="start" class="hidden">Начать</button>
 
-    <div id="wait" class="hidden">Ожидание бумажки...</div>
+  <div id="visible-block" class="hidden">
+      <div id="visible-from" style="font-size:.9em;color:#555;margin-bottom:4px"></div>
+      <div class="visible-text" style="white-space:pre-wrap;"></div>
+  </div>
 
-    <form id="form" class="hidden">
-        <div>
-            <textarea id="hidden" placeholder="Скрытая часть"></textarea>
-        </div>
-        <div>
-            <textarea id="visible" placeholder="Видимая часть"></textarea>
-        </div>
-        <button type="submit">Отправить</button>
-    </form>
+  <div id="wait" class="hidden">Ожидание бумажки…</div>
 
-    <div id="final" class="hidden">
-        <h2>Результат:</h2>
-        <ul id="final-list"></ul>
-    </div>
+  <form id="form" class="hidden">
+      <textarea id="hidden" placeholder="Скрытая часть"></textarea><br>
+      <button id="wrap-btn" type="button">Завернуть</button>
 
-    <script src="/static/main.js"></script>
+      <div id="second-step" class="hidden" style="margin-top:8px">
+          <textarea id="visible" placeholder="Видимая часть"></textarea><br>
+          <button type="submit">Передать следующему</button>
+      </div>
+  </form>
+
+  <div id="final" class="hidden">
+      <h2>Результат</h2>
+      <ul id="final-list"></ul>
+  </div>
+
+<script src="/static/main.js"></script>
 </body>
 </html>

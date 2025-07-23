@@ -5,8 +5,9 @@ from game import manager
 router = APIRouter()
 
 @router.get("/room/{room_id}")
-async def room_page(room_id: str):
-    with open("static/room.html", encoding="utf-8") as f:
+async def get_room(room_id: str, theme: str = "light"):
+    filename = "static/room_dark.html" if theme == "dark" else "static/room.html"
+    with open(filename, encoding="utf-8") as f:
         return HTMLResponse(f.read())
 
 @router.websocket("/ws/{room_id}/{player_id}")

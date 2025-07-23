@@ -1,0 +1,83 @@
+<!-- templates/room_dark.html  (вариант B) -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Чепуха — Dark</title>
+
+<!-- 1) считываем тему из query‑строки -->
+<script>
+const urlParams = new URLSearchParams(location.search);
+const curTheme  = urlParams.get("theme") || "light";
+const otherLink = curTheme === "dark"
+  ? `<a id="theme-link" href="?theme=light" style="float:right">☀️ Light</a>`
+  : `<a id="theme-link" href="?theme=dark"  style="float:right">🌙 Dark</a>`;
+document.write(otherLink);        // вставляем прямо в DOM
+</script>
+
+<style>
+:root{
+  --bg:#131720;
+  --card:#1e2736;
+  --border:#2e3a4f;
+  --main:#e4e9f3;
+  --accent:#6f7dff;
+}
+*{box-sizing:border-box} body{
+  margin:0 auto;max-width:720px;padding:24px;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto;
+  background:var(--bg);color:var(--main)
+}
+.hidden{display:none}
+button{
+  padding:10px 20px;border:none;border-radius:6px;
+  background:var(--accent);color:#fff;font-weight:600;
+  cursor:pointer;transition:opacity .2s
+}
+button:disabled{opacity:.4;cursor:default}
+textarea{
+  width:100%;min-height:70px;padding:10px;border-radius:6px;
+  border:1px solid var(--border);background:#111723;
+  color:var(--main);font-size:1rem;resize:vertical
+}
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:16px;margin:16px 0
+}
+#players li{list-style:"👉 ";margin:.4em 0}
+#wait{font-style:italic;color:var(--accent)}
+pre{white-space:pre-wrap;background:#0f1622;
+  border:1px solid var(--border);padding:10px;border-radius:6px}
+</style>
+</head>
+<body>
+  <h1 style="color:var(--accent)">Чепуха</h1>
+
+  <div id="players" class="card"></div>
+  <button id="start" class="hidden">Начать</button>
+
+  <div id="visible-block" class="card hidden">
+      <div id="visible-from" style="font-size:.85em;color:var(--accent)"></div>
+      <div class="visible-text" style="white-space:pre-wrap;font-size:1.1rem"></div>
+  </div>
+
+  <div id="wait" class="card hidden"></div>
+
+  <form id="form" class="hidden card" style="background:#111723">
+      <textarea id="hidden" placeholder="Скрытая часть"></textarea><br>
+      <button id="wrap-btn" type="button">Завернуть</button>
+
+      <div id="second-step" class="hidden" style="margin-top:10px">
+          <textarea id="visible" placeholder="Видимая часть"></textarea><br>
+          <button type="submit">Передать</button>
+      </div>
+  </form>
+
+  <div id="final" class="hidden card">
+      <h2 style="margin-top:0">Результат</h2>
+      <ul id="final-list"></ul>
+  </div>
+
+<script src="/static/main.js"></script>
+</body>
+</html>
