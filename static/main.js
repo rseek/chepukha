@@ -1,120 +1,131 @@
-let gameStarted = localStorage.getItem("game_started") === "true";
-let playerId = localStorage.getItem("player_id") || crypto.randomUUID();
-
-const urlParts = window.location.pathname.split("/");
-const roomId = urlParts[urlParts.length - 1];
-const ws = new WebSocket(`ws://${location.host}/ws/${roomId}/${playerId}`);
-
-const playerList = document.getElementById("players");
-const startBtn = document.getElementById("start");
-const form = document.getElementById("form");
-const hiddenField = document.getElementById("hidden");
-const visibleField = document.getElementById("visible");
-const visibleBlock = document.getElementById("visible-block");
-const waitBlock = document.getElementById("wait");
-const finalBlock = document.getElementById("final");
-const finalList = document.getElementById("final-list");
-const wrapBtn      = document.getElementById("wrap-btn");
-const secondStep   = document.getElementById("second-step");
-let   hiddenDraft  = "";              // временно храним «скрытую» часть
-
+/* ------- инициализация -------- */
+let playerId   = localStorage.getItem("player_id") || crypto.randomUUID();
 localStorage.setItem("player_id", playerId);
 
-// --- имя игрока ---
 let playerName = localStorage.getItem("player_name");
 if (!playerName) {
-    playerName = prompt("Введите ваше имя")?.trim() || "Игрок";
-    localStorage.setItem("player_name", playerName);
+  playerName = prompt("Введите ваше имя")?.trim() || "Игрок";
+  localStorage.setItem("player_name", playerName);
 }
 
+const path    = window.location.pathname.split("/");
+const roomId  = path[path.length - 1];
+const ws      = new WebSocket(`ws://${location.host}/ws/${roomId}/${playerId}`);
+
+let gameStarted = localStorage.getItem("game_started") === "true";
+
+/* ------- DOM --------- */
+const playerList  = document.getElementById("players");
+const startBtn    = document.getElementById("start");
+const form        = document.getElementById("form");
+const hiddenField = document.getElementById("hidden");
+const visibleField= document.getElementById("visible");
+const visibleBlk  = document.getElementById("visible-block");
+const waitBlk     = document.getElementById("wait");
+const finalBlk    = document.getElementById("final");
+const finalList   = document.getElementById("final-list");
+const fromSpan    = document.getElementById("visible-from");
+
+const sendBtn = document.getElementById("send-btn");
+
+let hiddenDraft = "";
+
+/* ---------- валидация & превью ---------- */
+const preview = document.getElementById("preview");
+let lastVisible = "";        // приходит от сервера
+
+function updateSendBtn() {
+  const ok = hiddenField.value.trim() || visibleField.value.trim();
+  sendBtn.disabled = !ok;
+}
+function updatePreview() {
+  preview.textContent =
+    [lastVisible, hiddenField.value, visibleField.value]
+      .filter(Boolean).join("\n");
+}
+
+hiddenField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
+visibleField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
+
+/* ------- WS open -------- */
 ws.addEventListener("open", () => {
-    ws.send(JSON.stringify({ action: "introduce", name: playerName }));
+  ws.send(JSON.stringify({ action: "introduce", name: playerName }));
 });
 
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.start) {
-        localStorage.setItem("game_started", "true");
-    }
-    gameStarted = localStorage.getItem("game_started") === "true";
-    if (data.wait && gameStarted) {
-        visibleBlock.classList.add("hidden");
-        waitBlock.classList.remove("hidden");
-        finalBlock.classList.add("hidden");
-        form.classList.add("hidden");
-    } else {
-        waitBlock.classList.add("hidden");
-    }
+/* ------- WS message ------- */
+ws.onmessage = (e) => {
+  const data = JSON.parse(e.data);
 
-    if (data.players) {
-        if (data.started !== undefined) {
-            gameStarted = data.started;
-            localStorage.setItem("game_started", gameStarted ? "true" : "false");
-        }
-        const plids = data.plids;
-        const names = data.players;
+  /* — players list — */
+  if (data.players) {
+    gameStarted = data.started ?? gameStarted;
+    localStorage.setItem("game_started", gameStarted ? "true" : "false");
 
-        playerList.innerHTML =
-            "<b>Игроки:</b><ul>" +
-            names.map(n => `<li>${n === playerName ? "<u>"+n+"</u>" : n}</li>`).join("") +
-            "</ul>";
+    playerList.innerHTML = "<ul>" +
+      data.players.map(n => `<li>${n === playerName ? "<u>"+n+"</u>" : n}</li>`).join("") +
+      "</ul>";
 
-        if (!gameStarted && !data.finished && plids[0] === playerId && plids.length >= 2) {
-            startBtn.classList.remove("hidden");
-        } else {
-            startBtn.classList.add("hidden");
-        }
-    }
+    const creator = data.plids ? data.plids[0] : playerId;
+    if (!gameStarted && data.players.length >= 2 && creator === playerId) {
+      startBtn.classList.remove("hidden");
+    } else startBtn.classList.add("hidden");
+  }
 
-    if ((data.visible !== undefined) && gameStarted) {
-        document.getElementById("visible-from").innerText =
-          data.from ? `Чепуха от ${data.from}` : "Начните писать чепуху!";
-        visibleBlock.classList.remove("hidden");
-        waitBlock.classList.add("hidden");
-        finalBlock.classList.add("hidden");
-        form.classList.remove("hidden");
-        visibleBlock.querySelector(".visible-text").innerText = data.visible;
-    }
+  /* — visible — */
+  if (data.visible !== undefined) {
+    lastVisible = data.visible;
+    fromSpan.textContent = data.from
+      ? `Чепуха от ${data.from}:`
+      : "Начните писать чепуху!";
+    visibleBlk.classList.remove("hidden");
+    visibleBlk.querySelector(".visible-text").textContent = data.visible;
 
-    if (data.finished) {
-        localStorage.setItem("game_started", "false");
-        visibleBlock.classList.add("hidden");
-        waitBlock.classList.add("hidden");
-        form.classList.add("hidden");
-        finalBlock.classList.remove("hidden");
-        finalList.innerHTML = data.sheets.map(p => `<li><pre>${p}</pre></li>`).join("");
-        startBtn.disabled = false;
-    }
+    waitBlk.classList.add("hidden");
+    finalBlk.classList.add("hidden");
+    form.classList.remove("hidden");
+
+    updatePreview();          // показать в правом блоке
+    updateSendBtn();    
+  }
+
+  /* — wait — */
+  if (data.wait && gameStarted) {
+    waitBlk.classList.remove("hidden");
+    form.classList.add("hidden");
+    visibleBlk.classList.add("hidden");
+  }
+
+  /* — finished — */
+  if (data.finished) {
+    localStorage.setItem("game_started", "false");
+    form.classList.add("hidden");
+    waitBlk.classList.add("hidden");
+    visibleBlk.classList.add("hidden");
+    finalBlk.classList.remove("hidden");
+    finalList.innerHTML = data.sheets
+      .map(s => `<li><pre>${s}</pre></li>`).join("");
+    startBtn.disabled = false;
+  }
 };
 
+/* ------- buttons -------- */
 startBtn.onclick = () => {
-    ws.send(JSON.stringify({ action: "start" }));
-    localStorage.setItem("game_started", "true");
-    startBtn.disabled = true;
-};
-
-wrapBtn.onclick = () => {
-  hiddenDraft = hiddenField.value.trim();
-  if (!hiddenDraft) return alert("Введите скрытый текст!");
-
-  // hiddenField.disabled = true;
-  // wrapBtn.disabled     = true;
-
-  secondStep.classList.remove("hidden");          // показываем 2‑й этап
-  visibleField.focus();
+  ws.send(JSON.stringify({ action: "start" }));
+  localStorage.setItem("game_started", "true");
+  startBtn.disabled = true;
 };
 
 form.onsubmit = (e) => {
   e.preventDefault();
+  const hidden = hiddenField.value.trim();
   const visible = visibleField.value.trim();
-  if (!hiddenDraft || !visible) return;
+  if (!hidden && !visible) return;     // обе пустые — не шлём
 
-  ws.send(JSON.stringify({ hidden: hiddenDraft, visible }));
+  ws.send(JSON.stringify({ hidden, visible }));
 
-  // сбросить UI в исходное состояние
-  hiddenDraft = "";
+  /* reset только своих полей */
   hiddenField.value = visibleField.value = "";
-  hiddenField.disabled = false;
-  wrapBtn.disabled     = false;
-  secondStep.classList.add("hidden");
+  updatePreview();
+  updateSendBtn();
+  form.classList.add("hidden");        // ждём новую бумажку
 };

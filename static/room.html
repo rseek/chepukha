@@ -1,79 +1,87 @@
-<!-- templates/room.html  (вариант A) -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <title>Чепуха — Light</title>
 
-<!-- 1) считываем тему из query‑строки -->
 <script>
-const urlParams = new URLSearchParams(location.search);
-const curTheme  = urlParams.get("theme") || "light";
-const otherLink = curTheme === "dark"
-  ? `<a id="theme-link" href="?theme=light" style="float:right">☀️ Light</a>`
-  : `<a id="theme-link" href="?theme=dark"  style="float:right">🌙 Dark</a>`;
-document.write(otherLink);        // вставляем прямо в DOM
+const q = new URLSearchParams(location.search);
+const cur = q.get("theme") || "light";
+document.write(cur==="dark"
+  ? `<a href="?theme=light" style="float:right">☀️ Light</a>`
+  : `<a href="?theme=dark"  style="float:right">🌙 Dark</a>`);
 </script>
 
 <style>
-:root {
-  --main: #333;
-  --accent: #0d6efd;
-  --border: #ddd;
-  --bg: #fff;
-}
-body {
-  font-family: system-ui, sans-serif;
-  margin: 0 auto; max-width: 640px; padding: 24px;
-  color: var(--main); background: var(--bg);
-}
-h2 { margin-top: 1.2em }
-.hidden { display:none }
-button{
-  padding:8px 16px;border:1px solid var(--accent);
-  background:var(--accent);color:#fff;border-radius:4px;
-  cursor:pointer;font-size:1rem
-}
-button:disabled{opacity:.4;cursor:default}
-textarea{
-  width:100%;min-height:60px;padding:8px;
-  border:1px solid var(--border);border-radius:4px;
-  resize:vertical;font-size:1rem
-}
-#players ul{margin:.5em 0;padding-left:1.2em}
-#players li{list-style:"👤 ";margin:.25em 0}
-#visible-block{border:1px solid var(--border);padding:12px;border-radius:6px;margin:12px 0;background:#fafafa}
-#wait{color:var(--accent);font-style:italic;margin:12px 0}
-pre{white-space:pre-wrap;border:1px solid var(--border);padding:8px;border-radius:4px;background:#f8f9fa}
+:root{--main:#333;--accent:#0d6efd;--border:#ddd;--bg:#fff}
+*{box-sizing:border-box} body{
+  margin:0;padding:24px 32px;font-family:system-ui,sans-serif;
+  background:var(--bg);color:var(--main);display:flex;gap:32px;max-width:900px}
+.hidden{display:none}
+/* — sidebar — */
+#sidebar{min-width:180px}
+#players ul{margin:.6em 0;padding-left:1.2em}
+#players li{list-style:"👤 ";margin:.3em 0}
+button{padding:8px 16px;background:var(--accent);color:#fff;
+  border:none;border-radius:6px;font-weight:600;cursor:pointer}
+button:disabled{opacity:.4}
+/* — main — */
+#main{flex:1}
+.card{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+textarea{width:100%;min-height:70px;padding:10px;border-radius:6px;
+  border:1px solid var(--border);resize:vertical;font-size:1rem}
+#visible-header{display:flex;justify-content:space-between;font-size:.85em;
+  color:var(--accent);margin-bottom:6px}
+#row{display:flex;gap:12px}
+#col-txt{flex:1;display:flex;flex-direction:column;gap:12px}
+#col-btn{display:flex;flex-direction:column;gap:12px}
+pre{white-space:pre-wrap;border:1px solid var(--border);padding:10px;border-radius:6px;background:#f8f9fa}
+#wait{color:var(--accent);font-style:italic}
 </style>
 </head>
 <body>
-  <h1>Чепуха</h1>
-
-  <div id="players"></div>
+<!-- sidebar -->
+<div id="sidebar">
+  <h2>Игроки</h2>
+  <div id="players" class="card"></div>
   <button id="start" class="hidden">Начать</button>
+</div>
 
-  <div id="visible-block" class="hidden">
-      <div id="visible-from" style="font-size:.9em;color:#555;margin-bottom:4px"></div>
-      <div class="visible-text" style="white-space:pre-wrap;"></div>
+<!-- main area -->
+<div id="main">
+  <div id="visible-block" class="card hidden">
+      <div id="visible-header"><span id="visible-from"></span></div>
+      <div class="visible-text" style="white-space:pre-wrap;font-size:1.1rem"></div>
   </div>
 
-  <div id="wait" class="hidden">Ожидаем листик...</div>
+<form id="form" class="card hidden">
+  <div id="row">
+    <!-- текстовые поля -->
+    <div id="col-txt">
+      <textarea id="hidden"
+        placeholder="Будет завёрнуто — следующий не увидит текст из этого поля"></textarea>
+      <textarea id="visible"
+        placeholder="Видимая часть — следующий увидит текст из этого поля"></textarea>
+    </div>
 
-  <form id="form" class="hidden">
-      <textarea id="hidden" placeholder="Будет завёрнуто - следующий не увидит текст из этого поля"></textarea><br>
-      <button id="wrap-btn" type="button">Завернуть</button>
+    <!-- кнопка + превью -->
+    <div id="col-btn" style="min-width:190px">
+      <button id="send-btn" type="submit" disabled>Передать следующему</button>
 
-      <div id="second-step" class="hidden" style="margin-top:8px">
-          <textarea id="visible" placeholder="Видимая часть - следующий увидит текст из этого поля"></textarea><br>
-          <button type="submit">Передать следующему</button>
+      <div id="preview" class="card" style="margin-top:12px;padding:12px 8px;
+           font-size:.9rem;white-space:pre-wrap;min-height:120px">
+        <i>Представление появится здесь…</i>
       </div>
-  </form>
-
-  <div id="final" class="hidden">
-      <h2>Получилась какая-то чепуха:</h2>
-      <ul id="final-list"></ul>
+    </div>
   </div>
+</form>
+
+  <div id="wait"  class="card hidden">Ожидаем листик…</div>
+
+  <div id="final" class="card hidden">
+      <h2>Получилась какая-то чепуха:</h2><ul id="final-list"></ul>
+  </div>
+</div>
 
 <script src="/static/main.js"></script>
 </body>
