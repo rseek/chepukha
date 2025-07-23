@@ -8,6 +8,15 @@ if (!playerName) {
   localStorage.setItem("player_name", playerName);
 }
 
+const TEXTS = {
+  start_placeholder: "Начните писать чепуху!",
+  from_player: name => `Вам листик от ${name}:`,
+  hidden_placeholder: "Будет завёрнуто — следующий не увидит текст из этого поля",
+  visible_placeholder: "Видимая часть — следующий увидит текст из этого поля",
+  final_title: "Получилась какая-то чепуха:",
+  waiting: "Ожидаем листик…",
+};
+
 const path    = window.location.pathname.split("/");
 const roomId  = path[path.length - 1];
 const ws      = new WebSocket(`ws://${location.host}/ws/${roomId}/${playerId}`);
@@ -34,6 +43,15 @@ let hiddenDraft = "";
 const preview = document.getElementById("preview");
 let lastVisible = "";        // приходит от сервера
 
+document.getElementById("copy-result").onclick = () => {
+  const result = [...document.querySelectorAll("#final-list li")].map(li => li.textContent).join("\n");
+  navigator.clipboard.writeText(result);
+};
+document.getElementById("wait").textContent = TEXTS.waiting
+document.getElementById("hidden").placeholder = TEXTS.hidden_placeholder
+document.getElementById("visible").placeholder = TEXTS.visible_placeholder
+// document.getElementById("final").clas = TEXTS.final_title
+
 function updateSendBtn() {
   const ok = hiddenField.value.trim() || visibleField.value.trim();
   sendBtn.disabled = !ok;
@@ -42,6 +60,17 @@ function updatePreview() {
   preview.textContent =
     [lastVisible, hiddenField.value, visibleField.value]
       .filter(Boolean).join("\n");
+}
+
+function animateSend() {
+  const hidden = document.getElementById("hidden")
+  const visible = document.getElementById("visible")
+  hidden.classList.add("fade-out")
+  visible.classList.add("fade-flash")
+  setTimeout(() => {
+    hidden.classList.remove("fade-out")
+    visible.classList.remove("fade-flash")
+  }, 800)
 }
 
 hiddenField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
@@ -75,8 +104,8 @@ ws.onmessage = (e) => {
   if (data.visible !== undefined) {
     lastVisible = data.visible;
     fromSpan.textContent = data.from
-      ? `Вам листик от ${data.from}:`
-      : "Начните писать чепуху!";
+      ? TEXTS.from_player(data.from)
+      : TEXTS.start_placeholder;
     visibleBlk.classList.remove("hidden");
     visibleBlk.querySelector(".visible-text").textContent = data.visible;
 
@@ -116,6 +145,7 @@ startBtn.onclick = () => {
 };
 
 form.onsubmit = (e) => {
+  animateSend()
   e.preventDefault();
   const hidden = hiddenField.value.trim();
   const visible = visibleField.value.trim();
