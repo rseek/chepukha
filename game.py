@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from fastapi import WebSocket
 from typing import List, Optional
 import asyncio
 
@@ -38,16 +39,28 @@ class GameManager:
     def __init__(self):
         self.rooms: dict[str, Room] = {}
 
-    async def connect(self, room_id: str, player_id: str, websocket):
+    async def connect(self, room_id: str, player_id: str, websocket: WebSocket):
         await websocket.accept()
         room = self.rooms.setdefault(room_id, Room(id=room_id))
-        existing = room.get_player_by_id(player_id)
-        if existing:
-            existing.ws = websocket
-        else:
-            room.players.append(Player(id=player_id, ws=websocket))
+        player = room.get_player_by_id(player_id)
+        if not player:
+            player = Player(id=player_id, ws=websocket)
+            room.players.append(player)
+        player.ws = websocket
+
         print(f"[CONNECT] {player_id} подключился к комнате {room_id}")
         await self.broadcast_players(room_id)
+
+        # Повторная инициализация состояния
+        if room.all_finished():
+            sheets = ["\n".join(step.to_text() for step in p.sheet) for p in room.players]
+            await player.ws.send_json({"finished": True, "sheets": sheets})
+        elif room.started:
+            if player.queue:
+                await self.deliver_next(player)
+            else:
+                await player.ws.send_json({"wait": True})
+
 
     async def disconnect(self, room_id: str, player_id: str):
         room = self.rooms.get(room_id)
