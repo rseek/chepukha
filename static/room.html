@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Чепуха</title>
+    <style>
+        .hidden { display: none; }
+        textarea { width: 100%; height: 60px; }
+    </style>
+</head>
+<body>
+    <div id="players"></div>
+    <button id="start" class="hidden">Начать</button>
+
+    <div id="visible-block" class="hidden">
+        <div>Видимая часть:</div>
+        <div class="visible-text" style="white-space: pre-wrap;"></div>
+    </div>
+
+    <div id="wait" class="hidden">Ожидание бумажки...</div>
+
+    <form id="form" class="hidden">
+        <div>
+            <textarea id="hidden" placeholder="Скрытая часть"></textarea>
+        </div>
+        <div>
+            <textarea id="visible" placeholder="Видимая часть"></textarea>
+        </div>
+        <button type="submit">Отправить</button>
+    </form>
+
+    <div id="final" class="hidden">
+        <h2>Результат:</h2>
+        <ul id="final-list"></ul>
+    </div>
+
+    <script src="/static/main.js"></script>
+</body>
+</html>
