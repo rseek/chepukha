@@ -85,11 +85,37 @@ class GameManager:
 
     # ── helpers ──────────────────────────────────────────────────
     async def broadcast_players(self, room: Room):
-        ids = [p.id for p in room.players]
+        """Отправляем всем актуальный список имён + статусы.
+           Сокеты, которые уже закрылись, удаляем из комнаты."""
+        ids   = [p.id   for p in room.players]
         names = [p.name for p in room.players]
+
+        dead = []                                 # сюда соберём мертвых
+
         for p in room.players:
-            if not p.finished:
-                await p.ws.send_json({"plids": ids, "players": names, "started": room.started, "finished": room.finished})
+            payload = {
+                "plids":   ids,                   # порядок id (для кнопки «Начать»)
+                "players": names,                 # имена
+                "started": room.started,
+                "finished": p.finished,
+            }
+            try:
+                await self.safe_send(p, payload)
+            except RuntimeError:
+                # сокет уже закрыт (старый вкладка / тайм‑аут)
+                dead.append(p)
+
+        # убираем мертвецов из комнаты
+        if dead:
+            for p in dead:
+                room.players.remove(p)
+                print(f"[CLEANUP] drop closed ws of {p.id}")
+
+    async def safe_send(self, player: Player, payload: dict):
+        try:
+            await player.ws.send_json(payload)
+        except RuntimeError:
+            print(f"[DROP] ws of {player.id} closed")
 
     async def deliver_state(self, room: Room, player: Player):
         """
@@ -102,31 +128,31 @@ class GameManager:
         if player.finished:
             return  # больше ничего не шлём, он уже вышел из игры
         if not player.inbox:
-            await player.ws.send_json({"wait": True})
+            await self.safe_send(player,{"wait": True})
             return
 
         sheet_idx = player.inbox[0]
 
         # если лист ещё не создан (может быть на ранней стадии игры)
         if sheet_idx >= len(room.sheets):
-            await player.ws.send_json({"visible": "", "from": None})
+            await self.safe_send(player, {"visible": "", "from": None})
             return
 
         sheet = room.sheets[sheet_idx]
         if sheet:
             visible = sheet[-1].visible
-            await player.ws.send_json({"visible": visible, "from": sheet[-1].author})
+            await self.safe_send(player, {"visible": visible, "from": sheet[-1].author})
         else:
             # лист пустой — первая строка
-            await player.ws.send_json({"visible": "", "from": None})
+            await self.safe_send(player, {"visible": "", "from": None})
         try:
             last = room.sheets[sheet_idx][-1]
-            await player.ws.send_json({
+            await self.safe_send(player, {
                 "visible": last.visible,
                 "from":    last.author
             })
         except IndexError as ie:
-            await player.ws.send_json({"visible": "", "from": None})
+            await self.safe_send(player, {"visible": "", "from": None})
 
     # ── game flow ────────────────────────────────────────────────
     async def handle_input(self, room_id: str, pid: str, data: dict):
@@ -178,7 +204,7 @@ class GameManager:
                 and len(room.sheets[sheet_idx]) - 1 == room.rounds_total * len(room.players)):
             player.finished = True
             player.inbox.clear()
-            await player.ws.send_json({
+            await self.safe_send(player, {
                 "finished": True,
                 "sheets": ["\n".join(step.to_text() for step in room.sheets[sheet_idx])]
             })

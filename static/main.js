@@ -75,7 +75,7 @@ ws.onmessage = (e) => {
   if (data.visible !== undefined) {
     lastVisible = data.visible;
     fromSpan.textContent = data.from
-      ? `Чепуха от ${data.from}:`
+      ? `Вам листик от ${data.from}:`
       : "Начните писать чепуху!";
     visibleBlk.classList.remove("hidden");
     visibleBlk.querySelector(".visible-text").textContent = data.visible;
