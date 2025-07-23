@@ -24,7 +24,8 @@ class Room:
     id: str
     players: List[Player] = field(default_factory=list)
     started: bool = False
-    rounds_total = 3
+    finished: bool = False
+    rounds_total = 2
 
     def get_player_by_id(self, pid: str) -> Optional[Player]:
         return next((p for p in self.players if p.id == pid), None)
@@ -46,31 +47,21 @@ class GameManager:
 
         existing_player = room.get_player_by_id(player_id)
         if existing_player:
-            try:
-                await existing_player.ws.close()
-            except Exception:
-                pass
+            print(f"[RECONNECT] {player_id} переподключается к комнате {room_id}")
             existing_player.ws = websocket
-            print(f"[RECONNECT] {player_id} переподключился к комнате {room_id}")
-            await websocket.accept()
-            await self.deliver_next(existing_player)
-            await self.broadcast_players(room_id)
-            return    
         else:
+            print(f"[CONNECT] {player_id} подключается к комнате {room_id}")
             player = Player(id=player_id, ws=websocket)
             room.players.append(player)
 
-        print(f"[CONNECT] {player_id} подключился к комнате {room_id}")
         await self.broadcast_players(room_id)
         await self.deliver_next(room.get_player_by_id(player_id))  # обновляем ему состояние
 
-
-
     async def disconnect(self, room_id: str, player_id: str):
         room = self.rooms.get(room_id)
-        if room:
-            room.players = [p for p in room.players if p.id != player_id]
-            print(f"[DISCONNECT] {player_id} покинул комнату {room_id}")
+        if not room:
+            return
+        print(f"[DISCONNECT] {player_id} покинул комнату {room_id}")
 
     async def handle_input(self, room_id: str, player_id: str, data: dict):
         room = self.rooms.get(room_id)
@@ -80,6 +71,7 @@ class GameManager:
         if data.get("action") == "start":
             if not room.started and room.players and room.players[0].id == player_id and len(room.players) >= 2:
                 room.started = True
+                room.finished = False
                 for p in room.players:
                     p.queue = ["(первая строка)"]
                 print(f"[GAME START] Комната {room_id} — игра началась")
@@ -113,7 +105,9 @@ class GameManager:
             sheets = ["\n".join(step.to_text() for step in p.sheet) for p in room.players]
             for p in room.players:
                 await p.ws.send_json({"finished": True, "sheets": sheets})
+                p.current_round = 0
             room.started = False
+            room.finished = True
 
     async def dispatch_turns(self, room: Room):
         for p in room.players:
@@ -128,7 +122,12 @@ class GameManager:
             return
         ids = [p.id for p in room.players]
         for p in room.players:
-            await p.ws.send_json({"players": ids})
+            await p.ws.send_json({
+                "players": ids,
+                "started": room.started,
+                "finished": room.finished,
+                "sheets": ["\n".join(step.to_text() for step in pl.sheet) for pl in room.players]
+            })
 
     async def deliver_next(self, player: Player):
         if not player:

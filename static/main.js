@@ -1,5 +1,5 @@
-const playerId = localStorage.getItem("player_id") || crypto.randomUUID();
-localStorage.setItem("player_id", playerId);
+let gameStarted = localStorage.getItem("game_started") === "true";
+let playerId = localStorage.getItem("player_id") || crypto.randomUUID();
 
 const urlParts = window.location.pathname.split("/");
 const roomId = urlParts[urlParts.length - 1];
@@ -14,19 +14,15 @@ const visibleBlock = document.getElementById("visible-block");
 const waitBlock = document.getElementById("wait");
 const finalBlock = document.getElementById("final");
 const finalList = document.getElementById("final-list");
-let gameStarted = localStorage.getItem("game_started") === "true";
 
-localStorage.setItem("game_started", "false");
+localStorage.setItem("player_id", playerId);
+
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log(localStorage.getItem("game_started"))
-
     if (data.start) {
-        console.log("ALAL data.start")
-        gameStarted = true;
         localStorage.setItem("game_started", "true");
     }
-
+    gameStarted = localStorage.getItem("game_started") === "true";
     if (data.wait && gameStarted) {
         visibleBlock.classList.add("hidden");
         waitBlock.classList.remove("hidden");
@@ -37,20 +33,24 @@ ws.onmessage = (event) => {
     }
 
     if (data.players) {
+        if (data.started !== undefined) {
+            gameStarted = data.started;
+            localStorage.setItem("game_started", gameStarted ? "true" : "false");
+        }
         const players = data.players;
         playerList.innerHTML = "<b>Игроки:</b> " + players.map(p => p === playerId ? `<u>${p}</u>` : p).join(", ");
 
         // Показываем кнопку "Начать", если:
         // - текущий игрок — первый (creator)
         // - и игроков двое или больше
-        if (players[0] === playerId && players.length >= 2) {
+        if ((players[0] === playerId) && (players.length >= 2) && (gameStarted === false)) {
             startBtn.classList.remove("hidden");
         } else {
             startBtn.classList.add("hidden");
         }
     }
 
-    if (data.visible !== undefined) {
+    if ((data.visible !== undefined) && gameStarted) {
         visibleBlock.classList.remove("hidden");
         waitBlock.classList.add("hidden");
         finalBlock.classList.add("hidden");
@@ -65,6 +65,7 @@ ws.onmessage = (event) => {
         form.classList.add("hidden");
         finalBlock.classList.remove("hidden");
         finalList.innerHTML = data.sheets.map(p => `<li><pre>${p}</pre></li>`).join("");
+        startBtn.disabled = false;
     }
 };
 
