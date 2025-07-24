@@ -60,17 +60,6 @@ function updatePreview() {
       .filter(Boolean).join("\n");
 }
 
-function animateSend() {
-  const hidden = document.getElementById("hidden")
-  // const visible = document.getElementById("visible")
-  hidden.classList.add("fade-out")
-  // visible.classList.add("fade-flash")
-  setTimeout(() => {
-    hidden.classList.remove("fade-out")
-    // visible.classList.remove("fade-flash")
-  }, 1800)
-}
-
 hiddenField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
 visibleField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
 
@@ -150,7 +139,6 @@ startBtn.onclick = () => {
 };
 
 form.onsubmit = (e) => {
-  // animateSend()
   e.preventDefault();
   const hidden = hiddenField.value.trim();
   const visible = visibleField.value.trim();
