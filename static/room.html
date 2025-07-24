@@ -9,11 +9,15 @@
 <title>Чепуха — Light</title>
 
 <script>
-const q = new URLSearchParams(location.search);
-const cur = q.get("theme") || "light";
-document.write(cur==="dark"
-  ? `<a href="?theme=light" style="float:right">☀️ Light</a>`
-  : `<a href="?theme=dark"  style="float:right">🌙 Dark</a>`);
+window.addEventListener("DOMContentLoaded", () => {
+  const q = new URLSearchParams(location.search);
+  const cur = q.get("theme") || "light";
+  const link = document.createElement("a");
+  link.href = cur === "dark" ? "?theme=light" : "?theme=dark";
+  link.textContent = cur === "dark" ? "☀️ Light" : "🌙 Dark";
+  link.style.float = "right";
+  document.body.prepend(link);
+});
 </script>
 
 <style>
