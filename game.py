@@ -4,8 +4,12 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from fastapi import WebSocket
+from dotenv import load_dotenv
+import boto3
+from botocore.exceptions import ClientError
 
 BASE_STORAGE_DIR = "chepukha_storage"
+load_dotenv()
 
 # ──────────────────────────── models ────────────────────────────
 @dataclass
@@ -36,6 +40,7 @@ class Room:
         self.sheets: list[list[Step]] = []           # все листики
         self.started: bool = False
         self.finished: bool = False
+        self.session_time: str = "not_started"
 
     # helpers
     def get_player_by_id(self, pid: str) -> Optional[Player]:
@@ -177,7 +182,8 @@ class GameManager:
                     and room.players
                     and len(room.players) >= 2
                     and room.players[0].id == pid):
-                room.storage_path = os.path.join(BASE_STORAGE_DIR, room_id, datetime.now().strftime("%Y%m%d%H%M%S"))
+                room.session_time = datetime.now().strftime("%Y%m%d%H%M%S")
+                room.storage_path = os.path.join(BASE_STORAGE_DIR, room_id, room.session_time)
                 os.makedirs(room.storage_path, exist_ok=True)
                 room.started = True
                 room.finised = False
@@ -226,10 +232,31 @@ class GameManager:
             await self.deliver_state(room, player)
 
         for i, sheet in enumerate(room.sheets):
-            path = os.path.join(room.storage_path, f"sheet{i+1}.txt")
+            path = os.path.join(room.storage_path, f"{room.players[i].name}.txt")
+            content = "\n".join(line.hidden + "\n" + line.visible for line in sheet)
             with open(path, "w", encoding="utf-8") as f:
-                f.write("\n".join(line.hidden + "\n" + line.visible for line in sheet))
+                f.write(content)
+            upload_to_s3(room_id, room.session_time, room.players[i].name, content)
 
 
 # экземпляр менеджера
 manager = GameManager()
+
+session = boto3.session.Session()
+s3 = session.client(
+    service_name='s3',
+    endpoint_url=os.getenv("S3_ENDPOINT"),
+    aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("S3_SECRET_KEY")
+)
+
+def upload_to_s3(room_id, session_time, player_name, content):
+    key = f"{room_id}/{session_time}/{player_name}.txt"
+    try:
+        s3.put_object(
+            Bucket=os.getenv("S3_BUCKET"),
+            Key=key,
+            Body=content.encode('utf-8')
+        )
+    except ClientError as e:
+        print("S3 Upload error:", e)
