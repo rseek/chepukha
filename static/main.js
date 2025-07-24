@@ -27,6 +27,7 @@ let gameStarted = localStorage.getItem("game_started") === "true";
 /* ------- DOM --------- */
 const playerList  = document.getElementById("players");
 const startBtn    = document.getElementById("start");
+const roundsSetting = document.getElementById("rounds-setting");
 const form        = document.getElementById("form");
 const hiddenField = document.getElementById("hidden");
 const visibleField= document.getElementById("visible");
@@ -93,8 +94,12 @@ ws.onmessage = (e) => {
 
     const creator = data.plids ? data.plids[0] : playerId;
     if (!gameStarted && data.players.length >= 2 && creator === playerId) {
+      roundsSetting.classList.remove("hidden");
       startBtn.classList.remove("hidden");
-    } else startBtn.classList.add("hidden");
+    } else {
+        roundsSetting.classList.add("hidden");
+        startBtn.classList.add("hidden");
+    }
   }
 
   /* — visible — */
@@ -138,7 +143,8 @@ ws.onmessage = (e) => {
 
 /* ------- buttons -------- */
 startBtn.onclick = () => {
-  ws.send(JSON.stringify({ action: "start" }));
+  const rounds = document.querySelector("#rounds").value;
+  ws.send(JSON.stringify({ action: "start", rounds: Number(rounds)}));
   localStorage.setItem("game_started", "true");
   startBtn.disabled = true;
 };

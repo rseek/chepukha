@@ -181,6 +181,7 @@ class GameManager:
                 os.makedirs(room.storage_path, exist_ok=True)
                 room.started = True
                 room.finised = False
+                room.rounds_total = int(data.get("rounds", 1))  # по умолчанию 1
                 room.sheets = [[] for _ in room.players]
                 for idx, p in enumerate(room.players):
                     p.inbox = [idx]               # у каждого свой листик
