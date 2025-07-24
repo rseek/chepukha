@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from fastapi import WebSocket
@@ -49,6 +49,9 @@ class Room:
     def next_player(self, idx: int) -> Player:
         return self.players[(idx + 1) % len(self.players)]
 
+    def get_player_names_string(self) -> str:
+        return ", ".join(p.name for p in self.players)
+
     def all_finished(self) -> bool:
         target = self.rounds_total
         return all(len(sheet) == target for sheet in self.sheets)
@@ -59,6 +62,23 @@ class GameManager:
     def __init__(self):
         self.rooms: Dict[str, Room] = {}
 
+    def cleanup_finished_rooms(self):
+        now = datetime.now()
+        to_delete = []
+        for room_id, room in self.rooms.items():
+            if room.finished and room.finished_at:
+                if now - room.finished_at > timedelta(minutes=5):
+                    to_delete.append(room_id)
+            elif len(room.players) == 0:
+                to_delete.append(room_id)
+        for room_id in to_delete:
+            del self.rooms[room_id]
+            print(f"[CLEANUP] Removed room {room_id}")
+
+    def print_state(self):
+        print("\n".join(f"Room {room_id} has players: {room.get_player_names_string()}"
+            for room_id, room in self.rooms.items()))
+
     # ── connection ───────────────────────────────────────────────
     async def connect(self, room_id: str, player_id: str, ws: WebSocket):
         await ws.accept()
@@ -67,11 +87,11 @@ class GameManager:
         player = room.get_player_by_id(player_id)
         if player:                                 # reconnect
             player.ws = ws
-            print(f"[RECONNECT] {player_id} -> {room_id}")
+            print(f"[RECONNECT] {player.name}(id: {player_id}) -> {room_id}")
         else:                                      # new player
             player = Player(player_id, ws=ws)
             room.players.append(player)
-            print(f"[CONNECT]   {player_id} -> {room_id}")
+            print(f"[CONNECT]   {player.name}(id: {player_id}) -> {room_id}")
 
         await self.broadcast_players(room)
 
@@ -89,7 +109,11 @@ class GameManager:
     async def disconnect(self, room_id: str, player_id: str):
         room = self.rooms.get(room_id)
         if room:
-            print(f"[DISCONNECT] {player_id} из {room_id} (игрок остаётся в памяти)")
+            player = room.get_player_by_id(player_id)
+            print(f"[DISCONNECT] {player.name}(id: {player_id}) из {room_id}")
+            for idx, p in enumerate(room.players):
+                if p.id == player_id:
+                    del room.players[idx]
 
     # ── helpers ──────────────────────────────────────────────────
     async def broadcast_players(self, room: Room):

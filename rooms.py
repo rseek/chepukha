@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket
 from fastapi.responses import HTMLResponse
 from game import manager
-import traceback
+# import traceback
 
 router = APIRouter()
 
@@ -20,6 +20,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, player_id: str)
             await manager.handle_input(room_id, player_id, data)
     except Exception as e:
         print(f"[WS ERROR] {e}")
-        print(traceback.format_exc())
+        # print(traceback.format_exc())
     finally:
         await manager.disconnect(room_id, player_id)
