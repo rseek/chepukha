@@ -24,7 +24,9 @@ const ws = new WebSocket(`${protocol}://${location.host}/ws/${roomId}/${playerId
 
 let gameStarted = localStorage.getItem("game_started") === "true";
 
-/* ------- DOM --------- */
+const STORAGE_KEY_HIDDEN = "draft_hidden";
+const STORAGE_KEY_VISIBLE = "draft_visible";
+
 const playerList  = document.getElementById("players");
 const startBtn    = document.getElementById("start");
 const roundsSetting = document.getElementById("rounds-setting");
@@ -49,6 +51,24 @@ document.getElementById("wait").textContent = TEXTS.waiting
 document.getElementById("hidden").placeholder = TEXTS.hidden_placeholder
 document.getElementById("visible").placeholder = TEXTS.visible_placeholder
 // document.getElementById("final").clas = TEXTS.final_title
+
+hiddenField.value = localStorage.getItem(STORAGE_KEY_HIDDEN) || "";
+visibleField.value = localStorage.getItem(STORAGE_KEY_VISIBLE) || "";
+
+// обновление draft при вводе
+hiddenField.addEventListener("input", () => {
+  localStorage.setItem(STORAGE_KEY_HIDDEN, hiddenField.value);
+});
+visibleField.addEventListener("input", () => {
+  localStorage.setItem(STORAGE_KEY_VISIBLE, visibleField.value);
+});
+
+function clearDraft() {
+  hiddenField.value = "";
+  visibleField.value = "";
+  localStorage.removeItem(STORAGE_KEY_HIDDEN);
+  localStorage.removeItem(STORAGE_KEY_VISIBLE);
+}
 
 function updateSendBtn() {
   const ok = hiddenField.value.trim() || visibleField.value.trim();
@@ -138,6 +158,12 @@ startBtn.onclick = () => {
   startBtn.disabled = true;
 };
 
+document.getElementById("logout").onclick = () => {
+  localStorage.removeItem("player_id");
+  localStorage.removeItem("player_name");
+  location.reload();
+};
+
 form.onsubmit = (e) => {
   e.preventDefault();
   const hidden = hiddenField.value.trim();
@@ -146,8 +172,7 @@ form.onsubmit = (e) => {
 
   ws.send(JSON.stringify({ hidden, visible }));
 
-  /* reset только своих полей */
-  hiddenField.value = visibleField.value = "";
+  clearDraft()
   updatePreview();
   updateSendBtn();
   form.classList.add("hidden");        // ждём новую бумажку
