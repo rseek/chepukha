@@ -111,9 +111,10 @@ class GameManager:
         if room:
             player = room.get_player_by_id(player_id)
             print(f"[DISCONNECT] {player.name}(id: {player_id}) из {room_id}")
-            for idx, p in enumerate(room.players):
-                if p.id == player_id:
-                    del room.players[idx]
+            # Э брат, нельзя пока из памяти удалять из комнаты, перепутается всё...
+            # for idx, p in enumerate(room.players):
+            #     if p.id == player_id:
+            #         del room.players[idx]
 
     # ── helpers ──────────────────────────────────────────────────
     async def broadcast_players(self, room: Room):
@@ -159,32 +160,37 @@ class GameManager:
         # нет листиков у игрока → ждём
         if player.finished:
             return  # больше ничего не шлём, он уже вышел из игры
+
         if not player.inbox:
             await self.safe_send(player,{"wait": True})
             return
 
         sheet_idx = player.inbox[0]
 
-        # если лист ещё не создан (может быть на ранней стадии игры)
+        # если лист ещё не создан (может быть на ранней стадии игры). что за бред?
         if sheet_idx >= len(room.sheets):
-            await self.safe_send(player, {"visible": "", "from": None})
+            await self.safe_send(player, {
+                "visible": "",
+                "from": None,
+                "sheet_owner": None
+            })
             return
 
         sheet = room.sheets[sheet_idx]
         if sheet:
             visible = sheet[-1].visible
-            await self.safe_send(player, {"visible": visible, "from": sheet[-1].author})
+            await self.safe_send(player, {
+                "visible": visible,
+                "from": sheet[-1].author,
+                "sheet_owner": sheet[0].author
+            })
         else:
             # лист пустой — первая строка
-            await self.safe_send(player, {"visible": "", "from": None})
-        try:
-            last = room.sheets[sheet_idx][-1]
             await self.safe_send(player, {
-                "visible": last.visible,
-                "from":    last.author
+                "visible": "",
+                "from": None,
+                "sheet_owner": None
             })
-        except IndexError as ie:
-            await self.safe_send(player, {"visible": "", "from": None})
 
     # ── game flow ────────────────────────────────────────────────
     async def handle_input(self, room_id: str, pid: str, data: dict):

@@ -48,7 +48,7 @@ textarea{
   color:var(--accent);margin-bottom:6px}
 #row{display:flex;gap:12px}
 #col-txt{flex:1;display:flex;flex-direction:column;gap:12px}
-#col-btn{display:flex;flex-direction:column;gap:12px}
+#col-btn{display:flex;flex-direction:column}
 pre{white-space:pre-wrap;background:#0f1622;border:1px solid var(--border);
   padding:10px;border-radius:6px}
 #wait{font-style:italic;color:var(--accent)}
@@ -89,13 +89,13 @@ pre{white-space:pre-wrap;background:#0f1622;border:1px solid var(--border);
 
     <!-- кнопка + превью -->
     <div id="col-btn">
-      <button id="send-btn" type="submit" disabled>Передать следующему</button>
-
-      <div id="preview" class="card" style="margin-top:12px;padding:20px 20px;
+      <div id="preview" class="card" style="padding:20px 20px;
            font-size:1.0rem;background:#131720;white-space:pre-wrap;min-height:120px">
-        <i>Представление появится здесь…</i>
       </div>
     </div>
+  </div>
+  <div id="row">
+    <button id="send-btn" type="submit" style="flex:1" disabled>Передать следующему</button>
   </div>
 </form>
 

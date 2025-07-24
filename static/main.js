@@ -9,12 +9,18 @@ if (!playerName) {
 }
 
 const TEXTS = {
-  start_placeholder: "Начните писать чепуху!",
-  from_player: name => `Вам листик от ${name}:`,
-  hidden_placeholder: "Будет завёрнуто — следующий не увидит текст из этого поля",
-  visible_placeholder: "Видимая часть — следующий увидит текст из этого поля",
+  start_description: "Это ваш листик, он пока пустой.<br><br>\
+    Вводите свою чепуху в двух полях ниже и передайте следующему игроку с помощью кнопки.<br><br>\
+    Следующий игрок увидит строки только из второго поля.",
+  sheet_description: (prev_player, ending) => `${prev_player} передал(а) вам этот завёрнутый листик.<br><br>${ending}`,
+  hidden_placeholder: "Эта часть листика будет скрыта (завёрнута) — следующий игрок не увидит текст из этого поля",
+  visible_placeholder: "Видимая часть — следующий игрок увидит текст этого поля",
   final_title: "Получилась какая-то чепуха:",
   waiting: "Ожидаем листик…",
+  sheetVisibleDesc: "На листике видны следующие строки:",
+  sheetHiddenDesc: "Все строки на листике оказались скрыты при заворачивании.<br><br>\
+    Вводите свою чепуху в двух полях ниже и передайте следующему игроку с помощью кнопки.",
+  sendBtnText: "Завернуть и передать следующему игроку"
 };
 
 const path    = window.location.pathname.split("/");
@@ -37,7 +43,7 @@ const visibleBlk  = document.getElementById("visible-block");
 const waitBlk     = document.getElementById("wait");
 const finalBlk    = document.getElementById("final");
 const finalList   = document.getElementById("final-list");
-const fromSpan    = document.getElementById("visible-from");
+const sheetDescSpan    = document.getElementById("visible-from");
 const sendBtn     = document.getElementById("send-btn");
 const logout      = document.getElementById("logout")
 let hiddenDraft   = "";
@@ -48,10 +54,13 @@ document.getElementById("copy-result").onclick = () => {
   const result = [...document.querySelectorAll("#final-list li")].map(li => li.textContent).join("\n");
   navigator.clipboard.writeText(result);
 };
-document.getElementById("wait").textContent = TEXTS.waiting
-document.getElementById("hidden").placeholder = TEXTS.hidden_placeholder
-document.getElementById("visible").placeholder = TEXTS.visible_placeholder
-// document.getElementById("final").clas = TEXTS.final_title
+
+waitBlk.textContent      = TEXTS.waiting
+hiddenField.placeholder  = TEXTS.hidden_placeholder
+visibleField.placeholder = TEXTS.visible_placeholder
+sendBtn.textContent      = TEXTS.sendBtnText
+
+// finalBlk. = TEXTS.final_title
 
 hiddenField.value = localStorage.getItem(STORAGE_KEY_HIDDEN) || "";
 visibleField.value = localStorage.getItem(STORAGE_KEY_VISIBLE) || "";
@@ -118,9 +127,12 @@ ws.onmessage = (e) => {
   /* — visible — */
   if (data.visible !== undefined) {
     lastVisible = data.visible;
-    fromSpan.textContent = data.from
-      ? TEXTS.from_player(data.from)
-      : TEXTS.start_placeholder;
+    const sheetDescEnding = data.visible
+      ? TEXTS.sheetVisibleDesc
+      : TEXTS.sheetHiddenDesc
+    sheetDescSpan.innerHTML = data.from
+      ? TEXTS.sheet_description(data.from, sheetDescEnding)
+      : TEXTS.start_description;
     visibleBlk.classList.remove("hidden");
     visibleBlk.querySelector(".visible-text").textContent = data.visible;
 
