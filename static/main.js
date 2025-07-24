@@ -20,7 +20,7 @@ const TEXTS = {
 const path    = window.location.pathname.split("/");
 const roomId  = path[path.length - 1];
 const protocol = location.protocol === "https:" ? "wss" : "ws";
-const ws = new WebSocket(`${protocol}://${location.host}/ws/${room_id}/${player_id}`);
+const ws = new WebSocket(`${protocol}://${location.host}/ws/${roomId}/${playerId}`);
 
 let gameStarted = localStorage.getItem("game_started") === "true";
 
