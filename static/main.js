@@ -38,10 +38,11 @@ const waitBlk     = document.getElementById("wait");
 const finalBlk    = document.getElementById("final");
 const finalList   = document.getElementById("final-list");
 const fromSpan    = document.getElementById("visible-from");
-const sendBtn = document.getElementById("send-btn");
-let hiddenDraft = "";
-const preview = document.getElementById("preview");
-let lastVisible = "";        // приходит от сервера
+const sendBtn     = document.getElementById("send-btn");
+const logout      = document.getElementById("logout")
+let hiddenDraft   = "";
+const preview     = document.getElementById("preview");
+let lastVisible   = "";        // приходит от сервера
 
 document.getElementById("copy-result").onclick = () => {
   const result = [...document.querySelectorAll("#final-list li")].map(li => li.textContent).join("\n");
@@ -91,6 +92,9 @@ ws.addEventListener("open", () => {
 /* ------- WS message ------- */
 ws.onmessage = (e) => {
   const data = JSON.parse(e.data);
+  if (data.started) {
+    logout.classList.add("hidden");
+  }
 
   /* — players list — */
   if (data.players) {
@@ -156,9 +160,10 @@ startBtn.onclick = () => {
   ws.send(JSON.stringify({ action: "start", rounds: Number(rounds)}));
   localStorage.setItem("game_started", "true");
   startBtn.disabled = true;
+  logout.classList.add("hidden");
 };
 
-document.getElementById("logout").onclick = () => {
+logout.onclick = () => {
   localStorage.removeItem("player_id");
   localStorage.removeItem("player_name");
   location.reload();
