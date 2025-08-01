@@ -19,7 +19,7 @@ async def startup_event():
 
     async def logger_task():
         while True:
-            manager.print_state()
+            # manager.print_state()
             await asyncio.sleep(150)  # 2.5 минут
 
     asyncio.create_task(cleaner_task())
