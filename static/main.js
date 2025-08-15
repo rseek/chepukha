@@ -42,7 +42,7 @@ const visibleField= document.getElementById("visible");
 const visibleBlk  = document.getElementById("visible-block");
 const waitBlk     = document.getElementById("wait");
 const finalBlk    = document.getElementById("final");
-const finalList   = document.getElementById("final-list");
+const finalText   = document.getElementById("final-text");
 const sheetDescSpan    = document.getElementById("visible-from");
 const sendBtn     = document.getElementById("send-btn");
 const logout      = document.getElementById("logout")
@@ -65,12 +65,16 @@ sendBtn.textContent      = TEXTS.sendBtnText
 hiddenField.value = localStorage.getItem(STORAGE_KEY_HIDDEN) || "";
 visibleField.value = localStorage.getItem(STORAGE_KEY_VISIBLE) || "";
 
+
 // обновление draft при вводе
 hiddenField.addEventListener("input", () => {
   localStorage.setItem(STORAGE_KEY_HIDDEN, hiddenField.value);
 });
 visibleField.addEventListener("input", () => {
   localStorage.setItem(STORAGE_KEY_VISIBLE, visibleField.value);
+});
+finalText.addEventListener("input", () => {
+  localStorage.setItem("finalText", finalText.value);
 });
 
 function clearDraft() {
@@ -159,8 +163,13 @@ ws.onmessage = (e) => {
     visibleBlk.classList.add("hidden");
     finalBlk.classList.remove("hidden");
     if (data.sheets) {
-      finalList.innerHTML = data.sheets
-      .map(s => `${s}`).join("");
+      const saved = localStorage.getItem("finalText");
+      if (saved) {
+        finalText.value = saved;
+      } else {
+        finalText.value = data.sheets.join("\n");
+        localStorage.setItem("finalText", finalText.value);
+      }
     }
     startBtn.disabled = false;
   }
