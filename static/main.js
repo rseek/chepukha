@@ -50,32 +50,13 @@ let hiddenDraft   = "";
 const preview     = document.getElementById("preview");
 let lastVisible   = "";        // приходит от сервера
 
-document.getElementById("copy-result").onclick = () => {
-  const result = [...document.querySelectorAll("#final-list li")].map(li => li.textContent).join("\n");
-  navigator.clipboard.writeText(result);
-};
-
 waitBlk.textContent      = TEXTS.waiting
 hiddenField.placeholder  = TEXTS.hidden_placeholder
 visibleField.placeholder = TEXTS.visible_placeholder
 sendBtn.textContent      = TEXTS.sendBtnText
 
-// finalBlk. = TEXTS.final_title
-
 hiddenField.value = localStorage.getItem(STORAGE_KEY_HIDDEN) || "";
 visibleField.value = localStorage.getItem(STORAGE_KEY_VISIBLE) || "";
-
-
-// обновление draft при вводе
-hiddenField.addEventListener("input", () => {
-  localStorage.setItem(STORAGE_KEY_HIDDEN, hiddenField.value);
-});
-visibleField.addEventListener("input", () => {
-  localStorage.setItem(STORAGE_KEY_VISIBLE, visibleField.value);
-});
-finalText.addEventListener("input", () => {
-  localStorage.setItem("finalText", finalText.value);
-});
 
 function clearDraft() {
   hiddenField.value = "";
@@ -96,6 +77,18 @@ function updatePreview() {
 
 hiddenField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
 visibleField.addEventListener("input", () => { updateSendBtn(); updatePreview(); });
+// обновление draft при вводе
+hiddenField.addEventListener("input", () => {
+  localStorage.setItem(STORAGE_KEY_HIDDEN, hiddenField.value);
+});
+visibleField.addEventListener("input", () => {
+  localStorage.setItem(STORAGE_KEY_VISIBLE, visibleField.value);
+});
+
+finalText.addEventListener("input", () => {
+  localStorage.setItem("finalText", finalText.value);
+  document.getElementById("copy-result").textContent = "Опубликовать и скопировать";
+});
 
 /* ------- WS open -------- */
 ws.addEventListener("open", () => {
@@ -202,4 +195,14 @@ form.onsubmit = (e) => {
   updatePreview();
   updateSendBtn();
   form.classList.add("hidden");        // ждём новую бумажку
+};
+
+finalBlk.onsubmit = (e) => {
+  e.preventDefault();
+  const result = finalText.value.trim();
+  if (!result) return;     // не шлём
+
+  navigator.clipboard.writeText(result);
+  ws.send(JSON.stringify({ action: "publish", result }));
+  document.getElementById("copy-result").textContent = "Скопировано ✓";
 };

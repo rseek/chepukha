@@ -97,14 +97,14 @@ pre{white-space:pre-wrap;border:1px solid var(--border);padding:10px;border-radi
 
   <div id="wait"  class="card hidden">Ожидаем листик…</div>
 
-  <div id="final" class="card hidden">
+  <form id="final" class="card hidden">
     <h3>Получилась какая-то чепуха:</h3>
     <textarea id="final-text" style="width:100%;min-height:140px;padding:10px;
       font-size:1.1rem;border-radius:6px;border:1px solid var(--border);resize:vertical"></textarea>
     <div style="margin-top:10px;text-align:right">
-      <button id="copy-result">Скопировать</button>
+      <button id="copy-result" type="submit">Опубликовать и скопировать</button>
     </div>
-  </div>
+  </form>
 </div>
 
 <script src="/static/main.js"></script>

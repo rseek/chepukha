@@ -230,6 +230,16 @@ class GameManager:
                 print(f"[START] room {room_id}")
             return
 
+        if data.get("action") == "publish":
+            result = data.get("result", "")
+            player = room.get_player_by_id(pid)
+            path = os.path.join(room.storage_path, f"{player.name}.txt")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(result)
+                print(f"[DEBUG] result: {result}")
+            if os.getenv("PUSH_TO_S3") == "YES":
+                upload_to_s3(room_id, room.session_time, player.name, result)
+
         if not room.started:
             return
 
